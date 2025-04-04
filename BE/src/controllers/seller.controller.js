@@ -1,65 +1,211 @@
 
-import Sellers from "../models/Sellers.models.js" 
+import jwt from "jsonwebtoken";
+import { Sellers } from "../models/Sellers.models.js";
+import { Users } from "../models/Users.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import bcrypt from "bcrypt";
-import zod from "zod";
+/**     newseller      
+export const newSeller = async (req, res) => {
+    const user_id = req._id;
+    const state = req.body.state;
+    const city = req.body.city;
+    const YOE = req.body.YOE;
+    const pincode = req.body.pincode;
+    const name = req.body.name;
 
-
-/**    signup controller    */
-export const signupUser =  async (req , res) => {
-
+    console.log(name);
     try{
-        console.log(req.body);
-        const requiredBody = zod.object({
-            firstName: zod.string().min(2).max(40),
-            lastName: zod.string().min(2).max(40),
-            userName: zod.string().min(2).max(40),
-            email: zod.string().min(2).max(40).email(),
-            password: zod.string().min(8).max(40),
-            city: zod.string().min(2).max(40),
-            state: zod.string().min(2).max(40),
-            country: zod.string().min(2).max(40),
-            area: zod.string().min(2).max(40),
-            pincode: zod.string().min(2).max(40),
-            contactNumber: zod.string().min(10).max(15)
+        console.log("line 1");
+        const isSellerExist = await Sellers.findOne({ 
+            userDetails: user_id 
         });
-        // validate the incoming body using zod
-        const parsedData = requiredBody.safeParse(req.body);
-        console.log("parsed data : " , parsedData);
-
-        if (! parsedData.success){
-            res.status(404).json(new ApiError(404 , "Bad request..." , parsedData.error));
-            return;
+        console.log(isSellerExist);
+        if(isSellerExist){
+            res.status(420).json(new ApiResponse(420 , "Seller already exist..."));
         }
-    
-        // hashed the password using bcrypt
-        const hashedPassword = await bcrypt.hash(parsedData.data.password , parseInt(process.env.SALTROUNDS));
-    
-    
-        // save the data in DB
-        const seller = await Sellers.create({
-            firstName: parsedData.data.firstName,
-            lastName: parsedData.data.lastName,
-            userName: parsedData.data.userName,
-            email: parsedData.data.email,
-            password: hashedPassword,
-            city: parsedData.data.city,
-            state: parsedData.data.state,
-            country: parsedData.data.country,
-            area: parsedData.data.area,
-            pincode: parsedData.data.pincode,
-            contactNumber: parsedData.data.contactNumber,
-            likes: [],
-            dislikes: [],
-            saved : []
-        });
-        console.log("user is : " , user);
-        const apiResponse = new ApiResponse(200, user , "signup successfully...");
-        console.log(apiResponse);
-        res.status(200).json(apiResponse);
-    }catch (error){
-        res.status(500).json(new ApiError(500, "something went wrong..." , error));
-    }
 
+
+        
+        const newSeller = await Sellers.create({
+            name : name,
+            experience: YOE,
+            userDetails: user_id,
+            rooms: []
+        });
+
+        console.log(newSeller);
+
+        console.log("line 2");
+
+        // update user details
+        const user = await Users.findByIdAndUpdate(
+            user_id,
+            {city , state , pincode},
+            {new: true , runValidators: true}
+        );
+        console.log(user);
+
+        if(!user){
+            res.status(403).json(new ApiError(403 , "User not found..."));
+        }
+        console.log(name);
+        console.log(YOE);
+        console.log(user_id);
+
+        
+
+        
+
+        const sellerToken = await jwt.sign({
+            _id: newSeller._id
+        }, process.env.JWT_SECRET_SELLER);
+
+        res.status(200).json(new ApiResponse(200 , sellerToken , "Seller created successfully..."));
+
+
+    }catch(error){
+        res.status(500).json(new ApiResponse(500 , "Error while uploading data..." , error));
+    }
+}
+
+
+
+
+export const newSeller = async (req, res) => {
+    try{
+        const user_id = req._id;
+        const state = req.body.state;
+        const city = req.body.city;
+        const YOE = req.body.YOE;
+        const pincode = req.body.pincode;
+        const name = req.body.name;
+
+        console.log(name);
+
+        if(!name || !state || !city || !YOE || !user_id || !pincode){
+            console.log("incomplete data...");
+            res.status(402).json(new ApiError(402 , "Incomplete data..."));
+            
+        }
+
+        if(!Sellers){
+            console.log("Seller is not found...");
+            res.status(501).json(new ApiError(500 , "Seller not found..."));
+        }
+
+        console.log(Sellers);
+
+
+        const isSellerExist = await Sellers.findOne({
+            userDetails: user_id
+        });
+
+        console.log(isSellerExist);
+
+        if(isSellerExist !== null){
+            res.status(420).json(new ApiResponse(420, "Seller already exist...."));
+        }
+
+        const newSeller = await Sellers.create({
+            name : name,
+            experience: YOE,
+            userDetails: user_id,
+            rooms: []
+        });
+
+        console.log(newSeller);
+
+        const user = await Users.findByIdAndUpdate(
+            user_id,
+            {city , state , pincode},
+            {new: true , runValidators: true}
+        );
+
+        console.log(user);
+
+
+        if(!user){
+            res.status(403).json(new ApiError(403 , "User not found..."));
+        }
+
+
+        const sellerToken = await jwt.sign({
+            _id: newSeller._id
+        } , process.env.JWT_SECRET_SELLER);
+
+
+        res.status(200).json(new ApiResponse(200 , sellerToken , "Seller created successfully"));
+
+
+    }catch(error){
+        res.status(500).json(new ApiError(500 , "Internal error..." , error));
+    }
+}
+
+*/
+
+
+export const newSeller = async (req , res) => {
+    try{
+        const user_id = req._id;
+        const name = req.body.name;
+        const YOE = req.body.YOE;
+        const state = req.body.state;
+        const city = req.body.city;
+        const pincode = req.body.pincode;
+
+        console.log(name , YOE, state , city, pincode , user_id);
+
+        const isSellerExist = await Sellers.findOne({ 
+            userDetails: user_id 
+        });
+        console.log(isSellerExist);
+        if(isSellerExist){
+            return res.status(420).json(new ApiResponse(420 , "Seller already exist..."));
+        }
+
+        const newSeller = await Sellers.create({
+            name : name,
+            experience: YOE,
+            userDetails: user_id,
+            rooms: []
+        });
+
+        if (!newSeller){
+            return res.status(400).json(new ApiError(400 , "Can't create seller..."));
+        }
+
+        console.log(newSeller);
+
+        const user = await Users.findByIdAndUpdate(
+            user_id,
+            {city , state , pincode},
+            {new: true , runValidators: true}
+        );
+        console.log(user);
+
+        if(!user){
+            return res.status(403).json(new ApiError(403 , "User not found..."));
+        }
+
+        
+        const sellerToken = await jwt.sign({
+            _id: newSeller._id
+        }, process.env.JWT_SECRET_SELLER);
+
+        res.status(200).json(new ApiResponse(200 , sellerToken , "Seller created successfully..."));
+
+    }catch(error){
+        res.status(500).json(new ApiError(500, "Internal error here..." , error));
+    }
+}
+
+
+export const allSellers = async (req , res) => {
+    try{
+        const allSellers = await Sellers.find({});
+        res.status(200).json(new ApiResponse(200 , allSellers , "all data fetched successfully..."));
+    }catch(error){
+        res.status(400).json(new ApiError(400, "Internal error..." , error));
+    }
 }

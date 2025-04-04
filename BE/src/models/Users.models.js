@@ -14,6 +14,9 @@ const UserSchema = new Schema(
             required: true,
             unique: true
         },
+        imageUrl: {
+            type: String
+        },
         password: {
             type: String,
             required: true
@@ -25,6 +28,14 @@ const UserSchema = new Schema(
         country: {
             type: String,
             required: true
+        },
+        state: {
+            type: String,
+            
+        },
+        pincode: {
+            type: String,
+            
         },
         saved: [
             {
@@ -44,6 +55,12 @@ const UserSchema = new Schema(
                 ref: "Rooms"
             }
         ], 
+        bookedRooms : [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Rooms"
+            }
+        ]
     } , 
     {
         timestamps: true

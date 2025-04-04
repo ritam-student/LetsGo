@@ -1,6 +1,10 @@
 import { Router } from "express";
-import { changePassword, deleteDislikedRooms, deleteLikedRooms, deleteProfile, deleteSavedRooms, forgetPassword, getDislikedRooms, getLikedRooms, getSavedRooms, getUserProfile, logoutUser, signinUser, signupUser,  updateDislikedRooms,  updateLikedRooms,  updateProfile, updateSavedRooms } from "../controllers/user.controller.js";
+import { changePassword, deleteDislikedRooms, deleteLikedRooms, deleteProfile, deleteSavedRooms, forgetPassword, getDislikedRooms, getLikedRooms, getSavedRooms, getUserProfile, signinUser, signupUser,  updateDislikedRooms,  updateLikedRooms,  updateProfile, updateSavedRooms } from "../controllers/user.controller.js";
 import { userAuth } from "../middlewares/userAuth.js";
+import { uploadImage } from "../middlewares/cloudinary.js";
+import multer from "multer";
+
+const upload = multer({ dest: "uploads/" });
 
 
 const userRouter = Router();
@@ -14,8 +18,6 @@ const userRouter = Router();
 userRouter.route("/signup").post(signupUser);
 // localhost:3000/api/v1/user/signin
 userRouter.route("/signin").post(signinUser);
-// localhost:3000/api/v1/user/logout
-userRouter.route("/logout").delete(userAuth , logoutUser);
 // localhost:3000/api/v1/user/getUserProfile   -->  _id get from token 
 userRouter.route("/getUserProfile").get(userAuth , getUserProfile);
 // localhost:3000/api/v1/user/getLikedRooms   -->    _id get from token
@@ -37,7 +39,7 @@ userRouter.route("/deleteProfile").delete(userAuth , deleteProfile);    // also 
 // localhost:3000/api/v1/user/changePassword   -->   user _id get from token
 userRouter.route("/changePassword").put(userAuth , changePassword);
 // localhost:3000/api/v1/user/forgetPassword   -->   user _id get from token
-userRouter.route("/forgetPassword").put(userAuth , forgetPassword);
+userRouter.route("/forgetPassword").put( forgetPassword);
 // localhost:3000/api/v1/user/updateLikedRooms/:id   -->   user _id get from token
 userRouter.route("/updateLikedRooms/:_id").put(userAuth , updateLikedRooms);
 // localhost:3000/api/v1/user/updateDislikedRooms/:id   -->   user _id get from token
@@ -45,6 +47,13 @@ userRouter.route("/updateDislikedRooms/:_id").put(userAuth , updateDislikedRooms
 // localhost:3000/api/v1/user/updateSavedRooms/:id   -->   user _id get from token
 userRouter.route("/updateSavedRooms/:_id").put(userAuth , updateSavedRooms);
 
-
+// Add error handling middleware for better debugging
+userRouter.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        // Handle Multer-specific errors
+        return res.status(400).json({ error: err.message });
+    }
+    next(err);
+});
 
 export default userRouter;

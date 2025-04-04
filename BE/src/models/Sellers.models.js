@@ -4,48 +4,15 @@ const Schema = mongoose.Schema;
 
 const SellerSchema = new Schema(
     {
-        firstName: {
+        name: {
             type: String,
             required: true
         },
-        lastName: {
-            type: String,
-            required: true
+        userDetails: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Users"
         },
-        userName: {
-            type: String,
-            required: true,
-            unique: true
-        },
-        email: {
-            type: String,
-            required: true
-        },
-        password: {
-            type: String,
-            required: true
-        },
-        city: {
-            type: String,
-            required: true
-        },
-        state: {
-            type: String,
-            required: true
-        },
-        country: {
-            type: String,
-            required: true
-        },
-        area: {
-            type: String,
-            required: true
-        },
-        pincode: {
-            type: String,
-            required: true
-        },
-        contactNumber: {
+        experience: {
             type: String,
             required: true
         },

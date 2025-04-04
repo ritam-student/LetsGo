@@ -4,7 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import bcrypt from "bcrypt";
 import zod from "zod";
 import jwt from "jsonwebtoken";
-import e from "express";
+import { Sellers } from "../models/Sellers.models.js";
 
 
 /**    signup controller    */
@@ -17,6 +17,7 @@ export const signupUser =  async (req , res) => {
             email: zod.string().min(2).max(40).email(),
             password: zod.string().min(8).max(40),
             country: zod.string().min(2).max(40),
+            imageUrl: zod.string()
         });
         // validate the incoming body using zod
         const parsedData = requiredBody.safeParse(req.body);
@@ -31,13 +32,15 @@ export const signupUser =  async (req , res) => {
             $or: [{email: parsedData.data.email} , {userName: parsedData.data.userName}]
         });
 
+        console.log(existUser);
+
         if (existUser){
-            if (existUser.email == parsedData.data.email){
-                res.status(400).json(new ApiError(400 , "Email already exist..."));
+            if (existUser.email === parsedData.data.email){
+                res.status(409).json(new ApiError(409 , "Email already exist..."));
                 return;
             }
-            if (existUser.userName == parsedData.data.userName){
-                res.status(400).json(new ApiError(400 , "Username already exist..."));
+            if (existUser.userName === parsedData.data.userName){
+                res.status(410).json(new ApiError(410 , "Username already exist..."));
                 return;
             }
         }
@@ -51,6 +54,7 @@ export const signupUser =  async (req , res) => {
             email: parsedData.data.email,
             password: hashedPassword,
             country: parsedData.data.country,
+            imageUrl: parsedData.data.imageUrl,
             likes: [],
             dislikes: [],
             saved : []
@@ -94,16 +98,41 @@ export const signinUser = async (req, res) => {
         if(userData){
             const passwordMatch = await bcrypt.compare(parsedData.data.password , userData.password);
 
+            
+
             // if valid password generate a JWT and send it back
             if(passwordMatch){
                 const token = await jwt.sign({
                     _id: userData._id
                 }, process.env.JWT_SECRET_USER);
                 console.log("token is : ", token );
-                res.status(200).json(new ApiResponse(200, token , "login successfull..."));
+
+                const isSeller = await Sellers.findOne({
+                    userDetails: userData._id
+                });
+                let data;
+                if(isSeller){
+                    const sellerToken = await jwt.sign({
+                        _id: isSeller._id
+                    }, process.env.JWT_SECRET_SELLER);
+                    data = {
+                        userData,
+                        token,
+                        sellerToken
+                    }
+                }else{
+                    data = {
+                        userData,
+                        token
+                    }
+                }
+
+
+                
+                res.status(200).json(new ApiResponse(200, data , "login successfull..."));
             }else{
                 // else return incorrect credentials
-                res.status(404).json(new ApiError(404 , "invalid credentials..."));
+                res.status(402).json(new ApiError(402 , "invalid credentials..."));
             }
         }else {
 
@@ -112,21 +141,10 @@ export const signinUser = async (req, res) => {
         }
 
     }catch(error){
-        res.status(404).json(new ApiError(400 , "Error while getting data..."));
+        res.status(500).json(new ApiError(500 , "Internal error..."));
     }
     
 }
-
-/**     logout controller   */
-export const logoutUser = async (req, res) => {
-    // logout controller
-    try {
-        res.status(200).json(new ApiResponse(200, null, "logout successful..."));
-    } catch (error) {
-        res.status(500).json(new ApiError(500, "something went wrong...", error));
-    }
-}
-
 
 /**     getUserProfile controller   */
 export const getUserProfile = async (req , res) => {
@@ -348,9 +366,21 @@ export const changePassword = async (req , res) => {
 /**     forgetPassword controller   */
 export const forgetPassword = async (req, res) => {
     try{
-        const newPass = req.body.newPassword;
-        const _id = req._id;
-        const updatedUser = await Users.findByIdAndUpdate(_id , {password: newPass});
+        const email = req.body.email;
+        const newPass = req.body.newPass;
+
+        console.log(email);
+        console.log(newPass);
+
+        const hashedPass = await bcrypt.hash(newPass , parseInt(process.env.SALTROUNDS));
+        console.log(hashedPass);
+        
+        const updatedUser = await Users.findOneAndUpdate(
+            {email : email},
+            {password : hashedPass},
+            {new: true}
+        );
+        console.log(updatedUser);
         if(!updatedUser){
             res.status(404).json(new ApiError(404 , "User not found..."));
             return;
@@ -367,10 +397,11 @@ export const forgetPassword = async (req, res) => {
 
 /**     updateLikedRooms controller   */
 export const updateLikedRooms = async (req, res ) => {
+
     try{
         const _id = req._id;
         const room_id = req.params._id;
-        const updatedUser = Users.findByIdAndUpdate(_id , 
+        const updatedUser = await Users.findByIdAndUpdate(_id , 
             { $addToSet: {likes: room_id}},         // prevents duplicate entries
             {new: true}
         );
@@ -380,6 +411,7 @@ export const updateLikedRooms = async (req, res ) => {
         }
         res.status(200).json(new ApiResponse(200 , updatedUser , "Room added sucessfully..."));
     }catch(error){
+        console.log("internal error");
         res.status(500).json(new ApiError(500 , "Internal error...", error ));
     }
 } 
@@ -393,7 +425,7 @@ export const updateDislikedRooms = async (req, res ) => {
     try{
         const _id = req._id;
         const room_id = req.params._id;
-        const updatedUser = Users.findByIdAndUpdate(_id , 
+        const updatedUser = await  Users.findByIdAndUpdate(_id , 
             { $addToSet: {dislikes: room_id}},         // prevents duplicate entries
             {new: true}
         );
@@ -416,7 +448,7 @@ export const updateSavedRooms = async (req, res ) => {
     try{
         const _id = req._id;
         const room_id = req.params._id;
-        const updatedUser = Users.findByIdAndUpdate(_id , 
+        const updatedUser = await Users.findByIdAndUpdate(_id , 
             { $addToSet: {saved: room_id}},         // prevents duplicate entries
             {new: true}
         );

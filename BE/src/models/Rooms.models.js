@@ -6,18 +6,19 @@ const RoomSchema = new Schema({
     houseName: {
         type : String,
     } ,
-    ownerName: {
-        type: String,
-        required: true,
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Sellers"
     },
     description: {
         type : String,
     } ,
-    roomsImageUrl : {
-        type : String,      // link of the image
-        required: true
-
-    } ,
+    roomsImageUrls : [
+        {
+            type : String,      // link of the image
+            required: true
+        }
+    ],
     address: {
         type : String,
         required : true
@@ -30,6 +31,10 @@ const RoomSchema = new Schema({
         type : String,
         required : true
     } ,
+    sellerEmail: {
+        type: String,
+        required: true
+    },
     state: {
         type : String,
         required : true
@@ -49,7 +54,7 @@ const RoomSchema = new Schema({
     } ,
     type: {
         type: String,
-        enum: ["Apartment", "Flat", "PG", "Hostel", "Villa", "Bungalow"],
+        enum: ["Apartment", "Pg", "Hostel", "Mess"],
         required: true
     },
     likes: [
@@ -75,14 +80,22 @@ const RoomSchema = new Schema({
         default: false,
         required: true
     },
-    contact_number: {
-        type : String,
-        required : true
-    } ,
     isSingleBed: {
         type : Boolean,
         required : true
-    } ,
+    },
+    isKitchen: {
+        type : Boolean
+    },
+    freeWifi : {
+        type: Boolean
+    },
+    reviews : [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Reviews"
+        }
+    ],
 }, {
     timestamps: true
 }

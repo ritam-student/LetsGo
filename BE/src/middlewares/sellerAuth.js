@@ -1,19 +1,20 @@
-import jwt from "jsonwebtoken";
-import { ApiError } from "../utils/ApiError";
+import  jwt  from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
 
 
 export const sellerAuth = async (req , res , next) => {
     try{
-        const token = req.headers.token;
-        const response = jwt.verify(token , process.env.JWT_SECRET_SELLER);
-
+        const sellerToken = req.headers.sellerToken || req.headers.sellertoken;
+        console.log(sellerToken);
+        const response = jwt.verify(sellerToken , process.env.JWT_SECRET_SELLER);
         if (response){
-            req._id = response._id;
+            req.seller_id = response._id;
+            console.log("response appreved...");
             next();
-        }else {
-            res.sattus(401).json(new ApiError(401 , "Unauthorized access..."  ))
+        }else{
+            res.status(401).json(new ApiError(401 , "Unauthorized access..."));
         }
     }catch(error){
-        res.status(500).json(new ApiError(500 , "Internal error..."))
+        res.status(500).json(new ApiError(500 , "Internal error..."));
     }
 }
